@@ -7,7 +7,11 @@ import time as t
 from datetime import datetime as dt
 import socket, f1_2020_telemetry, json, ctypes
 
+import numpy as np
+
 telemetry = {}
+
+#official data by codemasters
 TeamIDs = [
     "Mercedes",
     "Ferrari",
@@ -312,7 +316,7 @@ def main():
             })
             telemetry.update({
                 
-                # "Name" : packet.participants.__getitem__(carindex).name,
+                "Name" : packet.participants.__getitem__(carindex).name.decode('utf-8'),
 
                 "Your_Telemetry_ID" : packet.participants.__getitem__(carindex).yourTelemetry,
                 "Your_Telemetry" : ["Restricted", "Public"][packet.participants.__getitem__(carindex).yourTelemetry],            
@@ -360,14 +364,19 @@ def main():
                 "DRS" : packet.carTelemetryData.__getitem__(carindex).drs,
                 "Rev_Lights_Percent" : packet.carTelemetryData.__getitem__(carindex).revLightsPercent,
 
+                "Brakes_Temperature" : np.ctypeslib.as_array(packet.carTelemetryData.__getitem__(carindex).brakesTemperature).tolist(),
                 # "Brakes_Temperature" : packet.carTelemetryData.__getitem__(carindex).brakesTemperature,
 
+                "Tyres_Surface_Temperature" : np.ctypeslib.as_array(packet.carTelemetryData.__getitem__(carindex).tyresSurfaceTemperature).tolist(),
                 # "Tyres_Surface_Temperature" : packet.carTelemetryData.__getitem__(carindex).tyresSurfaceTemperature,
 
+                "Tyres_Inner_Temperature" : np.ctypeslib.as_array(packet.carTelemetryData.__getitem__(carindex).tyresInnerTemperature).tolist(),
                 # "Tyres_Inner_Temperature" : packet.carTelemetryData.__getitem__(carindex).tyresInnerTemperature
 
+                "Tyres_Pressure" : np.ctypeslib.as_array(packet.carTelemetryData.__getitem__(carindex).tyresPressure).tolist(),
                 # "Tyres_Pressure" : packet.carTelemetryData.__getitem__(carindex).tyresPressure,
 
+                "Surface_Type_ID" : np.ctypeslib.as_array(packet.carTelemetryData.__getitem__(carindex).surfaceType).tolist(),
                 # "Surface_Type_ID" : packet.carTelemetryData.__getitem__(carindex).surfaceType,
 
                 "Engine_Temperature" : packet.carTelemetryData.__getitem__(carindex).engineTemperature,
@@ -399,12 +408,16 @@ def main():
                 "Idle_RPM" : packet.carStatusData.__getitem__(carindex).idleRPM,
                 "Max_Gears" : packet.carStatusData.__getitem__(carindex).maxGears,
                 "DRS_Allowed" : packet.carStatusData.__getitem__(carindex).drsAllowed,
-                "Tyres_Wear" : packet.carStatusData.__getitem__(carindex).tyresWear,
+
+                "Tyres_Wear" : np.ctypeslib.as_array(packet.carStatusData.__getitem__(carindex).tyresWear).tolist(),
+                # "Tyres_Wear" : packet.carStatusData.__getitem__(carindex).tyresWear,
+
                 "Actual_Tyre_Compound_ID" : packet.carStatusData.__getitem__(carindex).actualTyreCompound,
                 "Actual_Tyre_Compound" : {16:"F1 Modern C5", 17:"F1 Modern C4", 18:"F1 Modern C3", 19:"F1 Modern C2", 20:"F1 Modern C1", 7:"F1 Modern Intermidiate", 8:"F1 Modern Wet", 9:"F1 Classic Dry",10:"F1 Classic Wet", 11: "F2 Super Soft", 12 : "F2 Soft", 14 : "F2 Medium", 15: "F2 Wet"}[packet.carStatusData.__getitem__(carindex).actualTyreCompound],
                 "Visual_Tyre_Compound_ID" : packet.carStatusData.__getitem__(carindex).visualTyreCompound,
 
 
+                "Tyres_Damage" : np.ctypeslib.as_array(packet.carStatusData.__getitem__(carindex).tyresDamage).tolist(),
                 # "Tyres_Damage" : packet.carStatusData.__getitem__(carindex).tyresDamage,
 
 
@@ -430,7 +443,7 @@ def main():
                 })
         for item in telemetry:
             typ = type(telemetry[item])
-            if typ != str and typ != int and typ != float:
+            if typ != str and typ != int and typ != float and typ != list:
                 print(item)
                 print(telemetry[item])
                 print(typ)
@@ -438,11 +451,10 @@ def main():
 
         #write data to json file
         try:
-            json_object = json.dumps(telemetry, indent = 4)   
-            print(json_object)
+            with open('telemetry.json', 'w') as fp:
+                json.dump(telemetry, fp)
+                fp.close()
         except Exception as e:
-            print('#'*10+'\n'
-                + str(e) + '\n'
-                + '#'*10+'\n')
+            print(e)
 if __name__ == "__main__":
     main()
